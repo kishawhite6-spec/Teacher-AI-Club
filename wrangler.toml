@@ -1,0 +1,14 @@
+# Cloudflare deploy config (Workers Static Assets).
+#
+# This is the fix for the "Asset too large" error. Without it, `wrangler deploy`
+# publishes the ENTIRE repo (including node_modules, which holds a 119 MiB binary)
+# and Cloudflare rejects it. Pointing `assets.directory` at ./dist means it uploads
+# ONLY your built site (a single ~67 KB index.html) and ignores everything else.
+#
+# `name` must match your existing Cloudflare Worker/project name.
+
+name = "teacher-ai-club"
+compatibility_date = "2026-06-12"
+
+[assets]
+directory = "./dist"
