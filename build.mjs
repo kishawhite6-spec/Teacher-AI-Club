@@ -12,8 +12,14 @@
  *
  * If AIRTABLE_TOKEN is set, the API is used; otherwise the file is used.
  *
- * Either way, the FREE build ships only the NUMBER of use cases per tool
- * (useCaseCount) — the premium Use Case text never enters the page.
+ * TWO OUTPUTS:
+ *   1) dist/index.html      PUBLIC. Safe for everyone and search engines.
+ *                           Every tool, but with Use Case text removed and the
+ *                           link kept only on the free Starter tools.
+ *   2) functions/_data/premium.js  MEMBERS ONLY. Use Case text for every tool
+ *                           plus the links for the locked tools, keyed by id.
+ *                           Written outside /dist so it is never served to the
+ *                           browser. The gating Function imports it server-side.
  */
 
 import { readFile, writeFile, mkdir } from "node:fs/promises";
@@ -30,6 +36,7 @@ if (existsSync(".env")) {
 
 /* Airtable column name -> object key. Edit here if your columns are named differently. */
 const FIELD = {
+  id: "ID",
   toolName: "Tool Name",
   description: "Description",
   toolType: "Tool Type",
@@ -37,10 +44,15 @@ const FIELD = {
   tags: "Tags",
   url: "URL",
   useCases: ["Use Case 1", "Use Case 2", "Use Case 3"],
+  free: "Free",   // checkbox: include this tool in the free Starter set
+  isNew: "New",   // checkbox: show the "New this month" badge
 };
 
 const FILE_CSV = "data/tools.csv";
 const FILE_JSON = "data/tools.json";
+
+const FREE_LIMIT = 15;                          // fallback only: if no tool is marked "Free", the first 15 by sort are free
+const PREMIUM_OUT = "functions/_data/premium.js"; // members-only output; MUST stay outside /dist
 
 /* ---------- helpers ---------- */
 function toArray(v) {
@@ -53,22 +65,44 @@ function cleanBaseId(v) {
   const m = v.match(/app[A-Za-z0-9]{10,}/);
   return m ? m[0] : v.trim().split(/[/?#]/)[0];
 }
+/* fallback id: turns a tool name into a clean slug if the Airtable ID is blank */
+function slugify(s) {
+  return String(s)
+    .normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "tool";
+}
+/* reads a checkbox value from either the API (true) or a CSV export ("checked"/"1"/"x") */
+function toBool(v) {
+  if (v === true) return true;
+  if (v == null) return false;
+  const s = String(v).trim().toLowerCase();
+  return s === "true" || s === "checked" || s === "1" || s === "yes" || s === "x";
+}
 
-/* turns one source row ({fields:{...}}) into the site's tool object */
+/* turns one source row ({fields:{...}}) into a rich tool object (split later) */
 function mapRecord(rec) {
   const f = rec.fields || {};
   const name = (f[FIELD.toolName] || "").toString().trim();
   if (!name) return null;
-  const useCaseCount = FIELD.useCases.reduce(
-    (n, key) => n + (f[key] && String(f[key]).trim() ? 1 : 0), 0);
+  const useCases = FIELD.useCases
+    .map(key => (f[key] || "").toString().trim())
+    .filter(Boolean);
+  // Prefer the Airtable "ID" field; fall back to a slug of the name if it is blank.
+  const id = (f[FIELD.id] || "").toString().trim() || slugify(name);
   return {
+    id,
     toolName: name,
     description: (f[FIELD.description] || "").toString().trim(),
     toolType: (f[FIELD.toolType] || "Other").toString().trim(),
     gradeLevel: toArray(f[FIELD.gradeLevel]),
     tags: toArray(f[FIELD.tags]),
     url: (f[FIELD.url] || "#").toString().trim(),
-    useCaseCount, // count only — premium text stays out of the page
+    useCases,                    // text — routed to the premium output only
+    useCaseCount: useCases.length,
+    free: toBool(f[FIELD.free]),
+    isNew: toBool(f[FIELD.isNew]),
   };
 }
 
@@ -136,21 +170,77 @@ async function main() {
 
   const tools = rows.map(mapRecord).filter(Boolean)
                     .sort((a, b) => a.toolName.localeCompare(b.toolName));
+
+  // Guarantee every id is unique so the premium payload can merge cleanly by id.
+  const seenIds = new Map();
+  for (const t of tools) {
+    const base = t.id;
+    let id = base, n = 2;
+    while (seenIds.has(id)) id = `${base}-${n++}`;
+    if (id !== base) console.warn(`! Duplicate id "${base}" → using "${id}" for "${t.toolName}"`);
+    seenIds.set(id, true);
+    t.id = id;
+  }
+
   console.log(`→ Mapped ${tools.length} tools.`);
   if (!tools.length) throw new Error("No tools found in the data source. Check the file/table is not empty.");
 
+  // If the "Free" checkbox has not been used yet, fall back to the first 15 by sort
+  // so the public site still has clickable tools during the transition.
+  if (!tools.some(t => t.free)) {
+    tools.forEach((t, i) => { t.free = i < FREE_LIMIT; });
+    console.log(`! No "Free" tools marked in Airtable. Defaulting the first ${FREE_LIMIT} by sort to free.`);
+  }
+  const freeCount = tools.filter(t => t.free).length;
+  console.log(`→ ${freeCount} free, ${tools.length - freeCount} premium.`);
+
+  // PUBLIC payload: safe for everyone and search engines.
+  // Use Case text is dropped everywhere; the link is kept only on free tools.
+  const publicTools = tools.map(t => ({
+    id: t.id,
+    toolName: t.toolName,
+    description: t.description,
+    toolType: t.toolType,
+    gradeLevel: t.gradeLevel,
+    tags: t.tags,
+    isNew: t.isNew,
+    useCaseCount: t.useCaseCount,
+    free: t.free,
+    url: t.free ? t.url : "",   // locked links never enter the public page
+  }));
+
+  // PREMIUM payload: members only. Use Case text for every tool, plus the link
+  // for the locked tools. Keyed by id for a clean client-side merge after login.
+  const premiumById = {};
+  for (const t of tools) {
+    premiumById[t.id] = {
+      useCases: t.useCases,
+      ...(t.free ? {} : { url: t.url }),
+    };
+  }
+
+  // ---- write output 1: the public page ----
   const template = await readFile("index.html", "utf8");
   const marker = /\/\*__TOOLS_START__[\s\S]*?__TOOLS_END__\*\//;
   if (!marker.test(template)) throw new Error("Missing /*__TOOLS_START__*/ … /*__TOOLS_END__*/ markers in index.html");
   const injection =
-    `/*__TOOLS_START__  (auto-generated by build.mjs — do not edit by hand) */\n` +
-    `const TOOLS = ${JSON.stringify(tools)};\n` +
+    `/*__TOOLS_START__  (auto-generated by build.mjs, do not edit by hand) */\n` +
+    `const TOOLS = ${JSON.stringify(publicTools)};\n` +
     `/*__TOOLS_END__*/`;
   const html = template.replace(marker, () => injection);
 
   await mkdir("dist", { recursive: true });
   await writeFile("dist/index.html", html);
-  console.log(`✓ Wrote dist/index.html (${tools.length} tools, ${(html.length / 1024).toFixed(0)} KB).`);
+  console.log(`✓ Wrote dist/index.html (${publicTools.length} tools, ${(html.length / 1024).toFixed(0)} KB, no premium data).`);
+
+  // ---- write output 2: the members-only premium data (outside /dist) ----
+  await mkdir("functions/_data", { recursive: true });
+  const premiumModule =
+    `// auto-generated by build.mjs, do not edit by hand.\n` +
+    `// Server-side only. Imported by the gating Function. Never served to the browser.\n` +
+    `export default ${JSON.stringify(premiumById)};\n`;
+  await writeFile(PREMIUM_OUT, premiumModule);
+  console.log(`✓ Wrote ${PREMIUM_OUT} (${Object.keys(premiumById).length} tools, premium fields).`);
 }
 
 main().catch(err => { console.error("\n✗ Build failed:\n" + err.message + "\n"); process.exit(1); });
