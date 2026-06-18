@@ -69,6 +69,8 @@
   .navlinks a.link:hover{color:var(--on-dark)}
   .navlinks a.link::after{content:"";position:absolute;left:0;bottom:-7px;height:2px;width:0;background:var(--lime);transition:width .25s}
   .navlinks a.link:hover::after{width:100%}
+  .navlinks a.authbtn{font-size:13.5px;font-weight:700;color:var(--on-dark);border:1px solid var(--line-d);border-radius:100px;padding:7px 14px;transition:background .2s,border-color .2s}
+  .navlinks a.authbtn:hover{background:rgba(239,237,255,.08);border-color:var(--on-dark-2)}
 
   /* ---------- HERO ---------- */
   .hero{position:relative;background:var(--bg);color:var(--on-dark);overflow:hidden;padding:64px 0 88px}
@@ -338,6 +340,9 @@
       <a href="#premium" class="link">Premium</a>
       <a href="#faq" class="link">FAQ</a>
       <a href="#toolkit" class="btn btn-lime">Browse Free</a>
+      <a href="#" class="authbtn" data-ms-modal="login" data-ms-content="!members">Log in</a>
+      <a href="#" class="authbtn" data-ms-modal="profile" data-ms-content="members">Account</a>
+      <a href="#" class="authbtn" data-ms-action="logout" data-ms-content="members">Log out</a>
     </div>
   </nav>
 </header>
