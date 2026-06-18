@@ -206,7 +206,8 @@ async function main() {
     isNew: t.isNew,
     useCaseCount: t.useCaseCount,
     free: t.free,
-    url: t.free ? t.url : "",   // locked links never enter the public page
+    url: t.free ? t.url : "",          // locked links never enter the public page
+    useCases: t.free ? t.useCases : [], // free tools show their use cases; locked stay premium
   }));
 
   // PREMIUM payload: members only. Use Case text for every tool, plus the link
