@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blog · Teacher AI Club Members</title>
+<meta name="robots" content="noindex"><!-- members-only page, keep out of search -->
+<script data-memberstack-app="app_cmqiwzpsl00ef0rpk7kyac0ul" src="https://static.memberstack.com/scripts/v2/memberstack.js" type="text/javascript"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0918; --surface:#1A1535; --paper:#F5F3FF; --paper-2:#ECE8FF;
+    --ink:#15112E; --ink-2:#5C567E; --on-dark:#EFEDFF; --on-dark-2:rgba(239,237,255,.60);
+    --blue:#3D5AFF; --pink:#FF3D8B; --lime:#A6F235; --teal:#21D4C4;
+    --line:rgba(21,17,46,.12); --line-d:rgba(239,237,255,.12);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{visibility:hidden;font-family:'Plus Jakarta Sans',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh}
+  a{text-decoration:none;color:inherit}
+
+  header{background:var(--bg);color:var(--on-dark);position:sticky;top:0;z-index:10;border-bottom:1px solid var(--line-d)}
+  nav{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:24px;padding:16px 24px;flex-wrap:wrap}
+  .logo{display:flex;align-items:center;gap:10px;font-family:'Unbounded';font-weight:800;font-size:18px;color:var(--on-dark)}
+  .logo .mark{color:var(--lime)}
+  .menu{display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap}
+  .menu a{font-size:14px;font-weight:700;color:var(--on-dark-2);padding:7px 13px;border-radius:100px;transition:background .2s,color .2s}
+  .menu a:hover{color:var(--on-dark);background:rgba(239,237,255,.08)}
+  .menu a.active{color:var(--bg);background:var(--lime)}
+  .menu a.ghost{border:1px solid var(--line-d);color:var(--on-dark)}
+
+  main{max-width:760px;margin:0 auto;padding:90px 24px 120px;text-align:center;position:relative}
+  .glow{position:absolute;top:-40px;left:50%;transform:translateX(-50%);width:520px;height:340px;background:radial-gradient(circle,rgba(255,61,139,.20),transparent 70%);filter:blur(40px);z-index:0;pointer-events:none}
+  .inner{position:relative;z-index:1}
+  .eyebrow{font-family:'Space Mono';font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--pink);font-weight:700}
+  h1{font-family:'Unbounded';font-weight:800;font-size:clamp(34px,6vw,60px);line-height:1.04;margin:16px 0 0;color:var(--ink)}
+  .lead{font-size:18px;color:var(--ink-2);margin:20px auto 0;max-width:540px;line-height:1.6}
+  .badge{display:inline-block;margin-top:30px;font-family:'Space Mono';font-size:13px;font-weight:700;letter-spacing:.06em;color:var(--ink);background:var(--paper-2);border:1px solid var(--line);border-radius:100px;padding:9px 18px}
+  .note{margin-top:40px;font-size:14px;color:var(--ink-2)}
+  .note a{color:var(--blue);font-weight:700}
+</style>
+</head>
+<body>
+<header>
+  <nav>
+    <a href="/" class="logo"><span class="mark">✦</span> Teacher AI Club</a>
+    <div class="menu">
+      <a href="/#toolkit">Directory</a>
+      <a href="/newsletter.html">Newsletter</a>
+      <a href="/blog.html" class="active">Blog</a>
+      <a href="#" data-ms-modal="profile" class="ghost">Account</a>
+      <a href="#" data-ms-action="logout" class="ghost">Log out</a>
+    </div>
+  </nav>
+</header>
+
+<main>
+  <div class="glow"></div>
+  <div class="inner">
+    <div class="eyebrow">Members Only</div>
+    <h1>The Blog</h1>
+    <p class="lead">In-depth guides, how-to walkthroughs, and real classroom examples for putting AI tools to work are coming here soon, written for members.</p>
+    <div class="badge">Coming soon</div>
+    <p class="note">Nothing to do yet. The first posts are in the works. Explore the <a href="/#toolkit">tool directory</a> while you wait.</p>
+  </div>
+</main>
+
+<script>
+/* Gate: only logged-in paying members can view this page. */
+(function gate(tries){
+  var ms = window.$memberstackDom;
+  if(!ms){ if(tries>0){ setTimeout(function(){gate(tries-1);},100); } else { document.body.style.visibility='visible'; } return; }
+  ms.getCurrentMember().then(function(res){
+    var member = res && res.data;
+    if(!member){ window.location.replace('/'); return; }
+    var paid = Array.isArray(member.planConnections) && member.planConnections.some(function(c){ return c.status==='ACTIVE' || c.active===true; });
+    if(!paid){ window.location.replace('/#premium'); return; }
+    document.body.style.visibility='visible';
+  }).catch(function(){ document.body.style.visibility='visible'; });
+})(40);
+</script>
+</body>
+</html>
