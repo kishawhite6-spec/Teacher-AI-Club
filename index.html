@@ -527,7 +527,7 @@
           <li><span class="ck">✓</span> Exclusive educator resources</li>
           <li><span class="ck">✓</span> Cancel anytime</li>
         </ul>
-        <a href="#" class="btn btn-ink" data-checkout-price="prc_teacher-ai-club-premium-monthly-1h5c0jua">Start Monthly Membership</a>
+        <a href="#" class="btn btn-ink" data-ms-price:add="prc_teacher-ai-club-premium-monthly-1h5c0jua">Start Monthly Membership</a>
       </div>
       <div class="plan pro reveal" data-d="2">
         <span class="ribbon">Best value · Save 17%</span>
@@ -539,7 +539,7 @@
           <li><span class="ck">✓</span> Priority access to new features</li>
           <li><span class="ck">✓</span> Best value for the year ahead</li>
         </ul>
-        <a href="#" class="btn btn-grad" data-checkout-price="prc_teacher-ai-club-premium-yearly-3b5a0jlj">Save with Annual Membership →</a>
+        <a href="#" class="btn btn-grad" data-ms-price:add="prc_teacher-ai-club-premium-yearly-3b5a0jlj">Save with Annual Membership →</a>
       </div>
     </div>
     <p class="reveal" style="text-align:center;color:var(--ink-2);font-size:15px;margin-top:26px">Let us do the research so you can focus on teaching.</p>
@@ -866,16 +866,8 @@ async function applyMembership(){
   if(tries>0) setTimeout(()=>waitForMemberstack(tries-1),100);
 })(40);
 
-/* checkout buttons: each pricing button carries data-checkout-price="prc_..." */
-document.querySelectorAll('[data-checkout-price]').forEach(btn=>{
-  btn.addEventListener('click',async e=>{
-    e.preventDefault();
-    const priceId=btn.getAttribute('data-checkout-price');
-    if(!priceId||!window.$memberstackDom) return;
-    try{ await window.$memberstackDom.purchasePlansWithCheckout({priceId}); }
-    catch(err){ console.error('Checkout failed:',err); }
-  });
-});
+/* Checkout is handled by Memberstack's data-ms-price:add attribute on the pricing
+   buttons, which opens signup-and-pay automatically. No custom checkout code needed. */
 
 /* account page: any button with data-customer-portal opens Stripe's billing portal */
 document.querySelectorAll('[data-customer-portal]').forEach(btn=>{
@@ -889,4 +881,3 @@ document.querySelectorAll('[data-customer-portal]').forEach(btn=>{
 </script>
 </body>
 </html>
-
