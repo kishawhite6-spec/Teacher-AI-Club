@@ -12,3 +12,6 @@ compatibility_date = "2026-06-12"
 
 [assets]
 directory = "./dist"
+[[r2_buckets]]
+binding = "DOCS"
+bucket_name = "teacher-ai-club-docs"
