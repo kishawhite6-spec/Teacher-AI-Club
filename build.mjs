@@ -250,7 +250,7 @@ async function main() {
 
   // ---- copy additional static pages into the deploy folder ----
   // These are member-area pages with no tool data to inject, so they are copied as-is.
-  const EXTRA_PAGES = ["newsletter.html", "blog.html,"thank-you.html"];
+  const EXTRA_PAGES = ["newsletter.html", "blog.html","thank-you.html"];
   for (const page of EXTRA_PAGES) {
     try {
       const content = await readFile(page, "utf8");
