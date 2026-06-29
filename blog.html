@@ -67,17 +67,34 @@
 </main>
 
 <script>
-/* Gate: only logged-in paying members can view this page. */
-(function gate(tries){
-  var ms = window.$memberstackDom;
-  if(!ms){ if(tries>0){ setTimeout(function(){gate(tries-1);},100); } else { document.body.style.visibility='visible'; } return; }
-  ms.getCurrentMember().then(function(res){
-    var member = res && res.data;
-    if(!member){ window.location.replace('/'); return; }
-    var paid = Array.isArray(member.planConnections) && member.planConnections.some(function(c){ return c.status==='ACTIVE' || c.active===true; });
-    if(!paid){ window.location.replace('/#premium'); return; }
-    document.body.style.visibility='visible';
-  }).catch(function(){ document.body.style.visibility='visible'; });
+/* Gate: verify membership the same authoritative way the directory page does.
+   We confirm the person is logged in (retrying briefly while Memberstack loads,
+   so a real member is never bounced), then let the server decide if they are a
+   paying member via /api/premium. Only an explicit 401/403 sends them to pricing. */
+async function getMemberWithRetry(ms,tries){
+  for(let i=0;i<tries;i++){
+    try{ const r=await ms.getCurrentMember(); if(r&&r.data) return r.data; }catch(e){}
+    await new Promise(r=>setTimeout(r,150));
+  }
+  return null;
+}
+async function gate(){
+  const ms=window.$memberstackDom;
+  if(!ms) return;
+  const member=await getMemberWithRetry(ms,12);                 // ~1.8s grace while the session loads
+  if(!member){ window.location.replace('/'); return; }          // genuinely not logged in
+  let token=null;
+  try{ if(ms.getMemberToken) token=await ms.getMemberToken(); }catch(e){}
+  let res;
+  try{ res=await fetch('/api/premium', token?{headers:{Authorization:'Bearer '+token}}:{}); }
+  catch(e){ document.body.style.visibility='visible'; return; } // network issue: do not trap the member
+  if(res.status===401||res.status===403){ window.location.replace('/#premium'); return; } // not subscribed
+  document.body.style.visibility='visible';                     // verified member
+}
+(function waitForMemberstack(tries){
+  if(window.$memberstackDom){ gate(); return; }
+  if(tries>0){ setTimeout(()=>waitForMemberstack(tries-1),100); }
+  else { document.body.style.visibility='visible'; }
 })(40);
 </script>
 <!-- Kit slide-in: free prompt pack -->
