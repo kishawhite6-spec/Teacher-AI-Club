@@ -894,6 +894,48 @@ document.querySelectorAll('[data-customer-portal]').forEach(btn=>{
 </script>
 <!-- Kit slide-in: free prompt pack -->
 <script async data-uid="3ad8f30ce6" src="https://teacheraiclub-net.kit.com/3ad8f30ce6/index.js"></script>
+<!-- ===== Mobile menu (hamburger) for member pages: self-contained ===== -->
+<style>
+  #navToggle{display:none;width:44px;height:40px;flex-direction:column;justify-content:center;align-items:center;gap:5px;background:transparent;border:1px solid rgba(239,237,255,.18);border-radius:12px;cursor:pointer;padding:0;margin-left:auto}
+  #navToggle span{display:block;width:20px;height:2px;border-radius:2px;background:#EFEDFF;transition:transform .25s ease,opacity .2s ease}
+  #navToggle.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+  #navToggle.open span:nth-child(2){opacity:0}
+  #navToggle.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+  @media(max-width:860px){
+    #navToggle{display:flex}
+    header nav .menu{
+      display:none;position:absolute;left:0;right:0;top:100%;
+      flex-direction:column;align-items:stretch;gap:8px;
+      background:#0B0918;border-top:1px solid rgba(239,237,255,.12);
+      box-shadow:0 24px 44px -20px rgba(0,0,0,.65);
+      padding:16px 22px 22px;max-height:80vh;overflow-y:auto;margin-left:0;
+    }
+    header nav .menu.open{display:flex}
+    header nav .menu a{width:100%;text-align:center;padding:13px 16px;font-size:15px}
+  }
+</style>
+<script>
+(function(){
+  var nav = document.querySelector('header nav');
+  var menu = nav && nav.querySelector('.menu');
+  if(!nav || !menu) return;
+  var btn = document.createElement('button');
+  btn.id = 'navToggle'; btn.type = 'button';
+  btn.setAttribute('aria-label','Open menu');
+  btn.setAttribute('aria-expanded','false');
+  btn.innerHTML = '<span></span><span></span><span></span>';
+  nav.appendChild(btn);
+  function setOpen(open){
+    menu.classList.toggle('open', open);
+    btn.classList.toggle('open', open);
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+  }
+  btn.addEventListener('click', function(){ setOpen(!menu.classList.contains('open')); });
+  menu.addEventListener('click', function(e){ if(e.target.closest('a')) setOpen(false); });
+  window.addEventListener('resize', function(){ if(window.innerWidth > 860) setOpen(false); });
+})();
+</script>
 </body>
 </html>
 
