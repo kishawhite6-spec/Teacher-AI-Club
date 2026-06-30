@@ -1,17 +1,35 @@
-# Cloudflare deploy config (Workers Static Assets).
+# Cloudflare Worker deploy config (Workers Static Assets, full-stack).
 #
-# This is the fix for the "Asset too large" error. Without it, `wrangler deploy`
-# publishes the ENTIRE repo (including node_modules, which holds a 119 MiB binary)
-# and Cloudflare rejects it. Pointing `assets.directory` at ./dist means it uploads
-# ONLY your built site (a single ~67 KB index.html) and ignores everything else.
+# This Worker serves your built static site from ./dist AND runs your one
+# dynamic route (/api/premium) from src/worker.js.
+#
+# How routing works here: a request that matches a file in ./dist is served
+# directly from the edge and never touches your code. Any request that does
+# NOT match a file (like /api/premium) is handed to the Worker script below.
 #
 # `name` must match your existing Cloudflare Worker/project name.
 
 name = "teacher-ai-club"
+main = "src/worker.js"
 compatibility_date = "2026-06-12"
 
 [assets]
 directory = "./dist"
-[[r2_buckets]]
-binding = "DOCS"
-bucket_name = "teacher-ai-club-docs"
+binding = "ASSETS"
+
+# No R2 binding needed right now: the free prompts PDF is served by a direct
+# public link, not by this Worker. If you later move the PDF onto a Worker
+# route, add the bucket binding back here:
+# [[r2_buckets]]
+# binding = "DOCS"
+# bucket_name = "teacher-ai-club-docs"
+
+# Non-secret settings can live here. Leave MEMBERSTACK_PAID_PLAN_IDS OUT for now:
+# while it is unset, any active paid plan unlocks (correct for launch). Once you
+# copy your two real pln_ ids from Memberstack, add them here, comma-separated:
+# [vars]
+# MEMBERSTACK_PAID_PLAN_IDS = "pln_xxxxxxxx,pln_yyyyyyyy"
+#
+# MEMBERSTACK_SECRET_KEY is a SECRET. Do NOT put it here. Set it separately:
+#   - wrangler:  wrangler secret put MEMBERSTACK_SECRET_KEY
+#   - dashboard: Worker > Settings > Variables and Secrets > add as a Secret
