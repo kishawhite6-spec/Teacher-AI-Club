@@ -52,7 +52,7 @@ const FILE_CSV = "data/tools.csv";
 const FILE_JSON = "data/tools.json";
 
 const FREE_LIMIT = 15;                          // fallback only: if no tool is marked "Free", the first 15 by sort are free
-const PREMIUM_OUT = "src/_data/premium.js"; // members-only output; MUST stay outside /dist
+const PREMIUM_OUT = "src/_data/premium.js"; // bundled into the Worker; MUST stay outside /dist
 
 /* ---------- helpers ---------- */
 function toArray(v) {

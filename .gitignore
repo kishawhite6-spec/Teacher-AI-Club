@@ -1,5 +1,6 @@
 node_modules/
 dist/
+src/_data/
 .env
 .DS_Store
 src/_data/
