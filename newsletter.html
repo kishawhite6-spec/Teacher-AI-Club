@@ -86,7 +86,7 @@ async function gate(){
   const member=await getMemberWithRetry(ms,12);                 // ~1.8s grace while the session loads
   if(!member){ window.location.replace('/'); return; }          // genuinely not logged in
   let token=null;
-  try{ if(ms.getMemberToken) token=await ms.getMemberToken(); }catch(e){}
+   try{ if(ms.getMemberCookie){ token=ms.getMemberCookie(); } else if(ms.getMemberToken){ token=await ms.getMemberToken(); } }catch(e){}
   let res;
   try{ res=await fetch('/api/premium', token?{headers:{Authorization:'Bearer '+token}}:{}); }
   catch(e){ document.body.style.visibility='visible'; return; } // network issue: do not trap the member
